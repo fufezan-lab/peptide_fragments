@@ -21,7 +21,8 @@ class PeptideFragment0r:
                 format PEPTIDE#<UNIMOD_NAME>:<POS>;<UNIMOD_NAME>:<POS> ...
             charges (list, optional): Charges for frag ion creation, default
                 is 1, 2, 3
-            neutral_losses (list, optional): Description
+            neutral_losses (dict, optional): Dictionary that specifies lists of
+                potential neutral losses for each amino acid.
             ions (list of str): Which ions shall be calculated. Overhead is small
                 fall all ions so maybe not worth it ...
         """
