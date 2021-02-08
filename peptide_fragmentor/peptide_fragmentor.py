@@ -3,8 +3,8 @@ from itertools import combinations
 from collections import defaultdict as ddict
 import pandas as pd
 import numpy as np
-import pyqms
-from pyqms.chemical_composition import ChemicalComposition
+import ursgal
+from ursgal.chemical_composition import ChemicalComposition
 import copy
 import pprint
 
@@ -21,7 +21,8 @@ class PeptideFragment0r:
                 format PEPTIDE#<UNIMOD_NAME>:<POS>;<UNIMOD_NAME>:<POS> ...
             charges (list, optional): Charges for frag ion creation, default
                 is 1, 2, 3
-            neutral_losses (list, optional): Description
+            neutral_losses (dict, optional): Dictionary that specifies lists of
+                potential neutral losses for each amino acid.
             ions (list of str): Which ions shall be calculated. Overhead is small
                 fall all ions so maybe not worth it ...
         """
@@ -32,7 +33,8 @@ class PeptideFragment0r:
         if neutral_losses is None:
             neutral_losses = peptide_fragmentor.neutral_losses
         else:
-            neutral_losses += peptide_fragmentor.neutral_losses
+            # neutral_losses += peptide_fragmentor.neutral_losses
+            neutral_losses.update(peptide_fragmentor.neutral_losses)
         self.neutral_losses = neutral_losses
 
         if ions is None:
@@ -151,7 +153,7 @@ class PeptideFragment0r:
                         translated_peptide_pos, ''
                     )
                     for required_unimod in required_unimods:
-                        if required_unimod == uni_mod_at_pos:
+                        if required_unimod in uni_mod_at_pos:
                             neutral_loss_can_occure = True
 
                 if neutral_loss_can_occure is False:
@@ -176,19 +178,24 @@ class PeptideFragment0r:
                         new_ion_frag['cc'] += neutral_loss_dict.get('cc', {})
                         mod = neutral_loss_dict.get('name', None)
                         if mod is not None:
+                            if mod.replace('+', '-') in new_ion_frag['mods'] or\
+                                mod.replace('-', '+') in new_ion_frag['mods']:
+                                continue
                             new_ion_frag['mods'].append(mod)
                         new_ion_frag['hill'] = new_ion_frag['cc'].hill_notation_unimod()
-                        new_ion_frag['charge'] = 1
                         new_ion_frag['predicted intensity'] = np.NAN
                         new_ion_frag['mass'] = new_ion_frag['cc']._mass()
-                        new_ion_frag['mz'] = new_ion_frag['mass'] + peptide_fragmentor.PROTON
                         new_ion_frag['series'] = ion_type
                         new_ion_frag['modstring'] = ','.join(sorted(new_ion_frag['mods']))
                         new_ion_frag['seq'] += aa
                         new_ion_frag['name'] = new_ion_frag['name_format_string'].format(**new_ion_frag)
                         _id = '{name}{modstring}'.format(**new_ion_frag)
                         if _id not in alread_seen_frags:
-                            pos_dict['pos{0}'.format(dpos+1)][ion_type].append(new_ion_frag)
+                            for charge in self.charges:
+                                c_new_ion_frag = copy.deepcopy(new_ion_frag)
+                                c_new_ion_frag['charge'] = charge
+                                c_new_ion_frag['mz'] = ursgal.ucore.calculate_mz(new_ion_frag['mass'], charge)
+                                pos_dict['pos{0}'.format(dpos+1)][ion_type].append(c_new_ion_frag)
                         alread_seen_frags.add(_id)
         if delete_pos0:
             del pos_dict['pos0']
