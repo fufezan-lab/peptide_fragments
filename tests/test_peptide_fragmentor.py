@@ -65,18 +65,23 @@ def test_fragment_two_aa_peptide_b_series():
 
 def test_fragment_three_aa_peptide_b_series():
     """Test b3 fragmentation"""
-    fragments = PeptideFragment0r('KKK', charges=[1], ions=['b']).df
+    fragments = PeptideFragment0r(
+        'KKR',
+        charges=[1],
+        ions=['b'],
+        neutral_losses={},
+    ).df
     # fragments = fragger.fragment_peptide(ion_series=['b'])
     assert isinstance(fragments, DataFrame)
     # assert len(fragments) == 3
-    row = fragments.iloc[2]
+    row = fragments.iloc[-1]
     assert row['name'] == 'b3'
-    assert row['hill'] == 'C(18)H(36)N(6)O(3)'
+    assert row['hill'] == 'C(18)H(36)N(8)O(3)'
     assert row['charge'] == 1
     assert pytest.approx(
         row['mz'],
         5e-6
-    ) == 385.29216550997
+    ) == 413.29831351797  # mass of full peptide - H20 + 1 proton
 
 
 def test_fragment_three_aa_peptide_c_series():
@@ -163,14 +168,14 @@ def test_fragment_three_aa_peptide_z_series():
     assert isinstance(fragments, DataFrame)
     # assert len(fragments) == 3
 
-    row = fragments.iloc[2]
+    row = fragments.iloc[3]
     assert row['name'] == 'z2'
-    # assert row['cc'] == 'C(11)H(24)N(4)O(2)S(1)'
+    assert row['hill'] == 'C(12)H(24)N(3)O(3)'
     assert row['charge'] == 1
     assert pytest.approx(
         row['mz'],
         5e-6
-    ) == 258.18236
+    ) == 259.189
 
 
 def test_fragment_two_aa_peptide_b_series_with_mod():
